@@ -1,6 +1,6 @@
 const express = require("express");
 const connectDB = require("./config/db");
-const shows = require("./routes/shows");
+const titles = require("./routes/titles");
 const auth = require("./routes/auth");
 const cors = require("cors");
 
@@ -11,7 +11,7 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/shows", shows);
+app.use("/api/titles", titles);
 app.use("/api/auth", auth);
 
 const PORT = process.env.PORT || 5000;

@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const ShowSchema = new mongoose.Schema({
+const TitleSchema = new mongoose.Schema({
   show_id: String,
   type: String,
   title: String,
@@ -14,4 +14,4 @@ const ShowSchema = new mongoose.Schema({
   description: String,
 });
 
-module.exports = mongoose.model("shows", ShowSchema);
+module.exports = mongoose.model("shows", TitleSchema);

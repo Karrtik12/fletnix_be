@@ -1,28 +1,38 @@
 const express = require("express");
-const Show = require("../models/Show");
+const Title = require("../models/Title");
 
 const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    let titles;
+    let titles, totalTitles, totalPages;
     const page = parseInt(req.query.page) || 1;
     const type = req.query.type;
     const userAge = parseInt(req.query.age) || 17;
     const limit = 15;
     if (userAge >= 18) {
-      titles = await Show.find({ type: new RegExp(type, "i") })
+      titles = await Title.find({ type: new RegExp(type, "i") })
         .skip((page - 1) * limit)
         .limit(limit);
+
+      totalTitles = await Title.countDocuments({
+        type: new RegExp(type, "i"),
+      });
     } else {
-      titles = await Show.find({
+      titles = await Title.find({
         type: new RegExp(type, "i"),
         rating: { $ne: "R" },
       })
         .skip((page - 1) * limit)
         .limit(limit);
+
+      totalTitles = await Title.countDocuments({
+        type: new RegExp(type, "i"),
+        rating: { $ne: "R" },
+      });
     }
-    res.json(titles);
+    totalPages = Math.ceil(totalTitles / limit);
+    res.json({ page, totalPages, count: titles.length, titles });
   } catch (error) {
     console.log({ errorr: error.message });
     res.status(500).send(error.message);
@@ -35,34 +45,28 @@ router.get("/search", async (req, res) => {
     const query = req.query.q;
     let titles;
     if (userAge >= 18) {
-      titles = await Show.find({
+      titles = await Title.find({
         $or: [
           { title: new RegExp(query, "i") },
           { cast: new RegExp(query, "i") },
         ],
-      })
-        .skip((page - 1) * limit)
-        .limit(limit);
-      res.json(titles);
+      });
     } else {
-      titles = await Show.find({
+      titles = await Title.find({
         $or: [
           { title: new RegExp(query, "i"), rating: { $ne: "R" } },
           { cast: new RegExp(query, "i"), rating: { $ne: "R" } },
         ],
-      })
-        .skip((page - 1) * limit)
-        .limit(limit);
-      res.json(titles);
+      });
     }
-    res.json(titles);
+    res.json({ query, count: titles.length, titles });
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
 
 router.get("/:id", async (req, res) => {
-  const show = await Show.findOne({ show_id: req.params.id });
+  const show = await Title.findOne({ show_id: req.params.id });
   res.json(show);
 });
 

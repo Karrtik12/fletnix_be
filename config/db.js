@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.dburl);
+    await mongoose.connect(
+      "mongodb+srv://Kartikayee:KarFletnix12@fletnix-cluster.ksq7du4.mongodb.net/fletnix?retryWrites=true&w=majority&appName=Fletnix-cluster"
+    );
     console.log("MongoDB connected");
   } catch (err) {
     console.error(err.message);

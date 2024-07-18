@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/fletnix");
+    await mongoose.connect(process.env.dburl);
     console.log("MongoDB connected");
   } catch (err) {
     console.error(err.message);

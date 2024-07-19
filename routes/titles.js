@@ -44,14 +44,17 @@ router.get("/search", async (req, res) => {
     const userAge = parseInt(req.query.age) || 17;
     const type = req.query.type;
     const query = req.query.q;
-    let titles;
+    const page = parseInt(req.query.page) || 1;
+    let titles, totalPages;
     if (userAge >= 18) {
       titles = await Title.find({
         $or: [
           { title: new RegExp(query, "i"), type: new RegExp(type, "i") },
           { cast: new RegExp(query, "i"), type: new RegExp(type, "i") },
         ],
-      });
+      })
+        .skip((page - 1) * limit)
+        .limit(limit);
     } else {
       titles = await Title.find({
         $or: [
@@ -66,7 +69,9 @@ router.get("/search", async (req, res) => {
             type: new RegExp(type, "i"),
           },
         ],
-      });
+      })
+        .skip((page - 1) * limit)
+        .limit(limit);
     }
     res.json({ query, count: titles.length, titles });
   } catch (error) {

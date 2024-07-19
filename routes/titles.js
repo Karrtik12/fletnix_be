@@ -46,7 +46,7 @@ router.get("/search", async (req, res) => {
     const type = req.query.type;
     const query = req.query.q;
     const page = parseInt(req.query.page) || 1;
-    let titles, totalPages;
+    let titles, totalTitles, totalPages;
     if (userAge >= 18) {
       titles = await Title.find({
         $or: [
@@ -56,6 +56,13 @@ router.get("/search", async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit);
+
+      totalTitles = await Title.countDocuments({
+        $or: [
+          { title: new RegExp(query, "i"), type: new RegExp(type, "i") },
+          { cast: new RegExp(query, "i"), type: new RegExp(type, "i") },
+        ],
+      });
     } else {
       titles = await Title.find({
         $or: [
@@ -73,8 +80,23 @@ router.get("/search", async (req, res) => {
       })
         .skip((page - 1) * limit)
         .limit(limit);
+      totalTitles = await Title.countDocuments({
+        $or: [
+          {
+            title: new RegExp(query, "i"),
+            rating: { $ne: "R" },
+            type: new RegExp(type, "i"),
+          },
+          {
+            cast: new RegExp(query, "i"),
+            rating: { $ne: "R" },
+            type: new RegExp(type, "i"),
+          },
+        ],
+      });
     }
-    res.json({ query, count: titles.length, titles });
+    totalPages = Math.ceil(totalTitles / limit);
+    res.json({ page, totalPages, count: titles.length, titles });
   } catch (error) {
     res.status(500).send(error.message);
   }

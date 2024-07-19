@@ -41,6 +41,7 @@ router.get("/", async (req, res) => {
 
 router.get("/search", async (req, res) => {
   try {
+    const limit = 15;
     const userAge = parseInt(req.query.age) || 17;
     const type = req.query.type;
     const query = req.query.q;

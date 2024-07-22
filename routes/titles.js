@@ -10,12 +10,13 @@ router.get("/", async (req, res) => {
     const type = req.query.type;
     const userAge = parseInt(req.query.age) || 17;
     const limit = 15;
-    const matchCondition = {
-      type: new RegExp(type, "i"),
-      ...(userAge < 18 && { rating: { $ne: "R" } }),
-    };
-    const aggregationPipeline = [
-      { $match: matchCondition },
+    titles = await Title.aggregate([
+      {
+        $match: {
+          type: new RegExp(type, "i"),
+          ...(userAge < 18 && { rating: { $ne: "R" } }),
+        },
+      },
       {
         $addFields: {
           date_added: {
@@ -31,9 +32,11 @@ router.get("/", async (req, res) => {
       { $sort: { date_added: -1 } },
       { $skip: (page - 1) * limit },
       { $limit: limit },
-    ];
-    titles = await Title.aggregate(aggregationPipeline);
-    totalTitles = await Title.countDocuments(matchCondition);
+    ]);
+    totalTitles = await Title.countDocuments({
+      type: new RegExp(type, "i"),
+      ...(userAge < 18 && { rating: { $ne: "R" } }),
+    });
     totalPages = Math.ceil(totalTitles / limit);
     res.json({ page, totalPages, count: titles.length, titles });
   } catch (error) {

@@ -10,31 +10,34 @@ router.get("/", async (req, res) => {
     const type = req.query.type;
     const userAge = parseInt(req.query.age) || 17;
     const limit = 15;
-    if (userAge >= 18) {
-      titles = await Title.find({ type: new RegExp(type, "i") })
-        .skip((page - 1) * limit)
-        .limit(limit);
-
-      totalTitles = await Title.countDocuments({
-        type: new RegExp(type, "i"),
-      });
-    } else {
-      titles = await Title.find({
-        type: new RegExp(type, "i"),
-        rating: { $ne: "R" },
-      })
-        .skip((page - 1) * limit)
-        .limit(limit);
-
-      totalTitles = await Title.countDocuments({
-        type: new RegExp(type, "i"),
-        rating: { $ne: "R" },
-      });
-    }
+    const matchCondition = {
+      type: new RegExp(type, "i"),
+      ...(userAge < 18 && { rating: { $ne: "R" } }),
+    };
+    const aggregationPipeline = [
+      { $match: matchCondition },
+      {
+        $addFields: {
+          date_added: {
+            $convert: {
+              input: "$date_added",
+              to: "date",
+              onError: new Date(0),
+              onNull: new Date(0),
+            },
+          },
+        },
+      },
+      { $sort: { date_added: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+    titles = await Title.aggregate(aggregationPipeline);
+    totalTitles = await Title.countDocuments(matchCondition);
     totalPages = Math.ceil(totalTitles / limit);
     res.json({ page, totalPages, count: titles.length, titles });
   } catch (error) {
-    console.log({ errorr: error.message });
+    console.log({ error: error.message });
     res.status(500).send(error.message);
   }
 });
@@ -47,54 +50,33 @@ router.get("/search", async (req, res) => {
     const query = req.query.q;
     const page = parseInt(req.query.page) || 1;
     let titles, totalTitles, totalPages;
-    if (userAge >= 18) {
-      titles = await Title.find({
-        $or: [
-          { title: new RegExp(query, "i"), type: new RegExp(type, "i") },
-          { cast: new RegExp(query, "i"), type: new RegExp(type, "i") },
-        ],
-      })
-        .skip((page - 1) * limit)
-        .limit(limit);
-
-      totalTitles = await Title.countDocuments({
-        $or: [
-          { title: new RegExp(query, "i"), type: new RegExp(type, "i") },
-          { cast: new RegExp(query, "i"), type: new RegExp(type, "i") },
-        ],
-      });
-    } else {
-      titles = await Title.find({
-        $or: [
-          {
-            title: new RegExp(query, "i"),
-            rating: { $ne: "R" },
-            type: new RegExp(type, "i"),
+    const matchCondition = {
+      $or: [
+        { title: new RegExp(query, "i"), type: new RegExp(type, "i") },
+        { cast: new RegExp(query, "i"), type: new RegExp(type, "i") },
+      ],
+      ...(userAge < 18 && { rating: { $ne: "R" } }),
+    };
+    const aggregationPipeline = [
+      { $match: matchCondition },
+      {
+        $addFields: {
+          date_added: {
+            $convert: {
+              input: "$date_added",
+              to: "date",
+              onError: new Date(0),
+              onNull: new Date(0),
+            },
           },
-          {
-            cast: new RegExp(query, "i"),
-            rating: { $ne: "R" },
-            type: new RegExp(type, "i"),
-          },
-        ],
-      })
-        .skip((page - 1) * limit)
-        .limit(limit);
-      totalTitles = await Title.countDocuments({
-        $or: [
-          {
-            title: new RegExp(query, "i"),
-            rating: { $ne: "R" },
-            type: new RegExp(type, "i"),
-          },
-          {
-            cast: new RegExp(query, "i"),
-            rating: { $ne: "R" },
-            type: new RegExp(type, "i"),
-          },
-        ],
-      });
-    }
+        },
+      },
+      { $sort: { date_added: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ];
+    titles = await Title.aggregate(aggregationPipeline);
+    totalTitles = await Title.countDocuments(matchCondition);
     totalPages = Math.ceil(totalTitles / limit);
     res.json({ page, totalPages, count: titles.length, titles });
   } catch (error) {

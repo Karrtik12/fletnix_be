@@ -10,6 +10,4 @@ To run this application in your local machine, follow these steps:
 - Then in terminal run `node --env-file=.env server.js`
 - All set!!
 
-### Note:
-
-- Your local machine should have Node.js and npm installed
+##### Note: Your local machine should have Node.js and npm installed
